@@ -1,88 +1,73 @@
-with Ada_Integer;
-use Ada_Integer;
-with Text_IO;
-use Text_IO;
-with Msort;
-use Msort;
+with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
+with Text_IO; use Text_IO;
+with Msort; use Msort;
 
-procedure Sort (array_range: in out A) is
-    integer: low := 1;
-    integer: high := length(A);
-    integer: mid := (low + high) / 2;
-    integer: i := 1;
-    integer: j := 1;
-    boolean: left := false;
-    boolean: right := true;
-    --entry Ready(low: in integer);
-    entry Left;
-    entry Right;
+package body Msort is
 
-    --task type sort_half(integer: in low, integer: in high);
-    
-    --task body sort_half(low: in integer, high: in integer) is
-    --begin
-    --    if length(A) > 1 then
-    --        helper := A(low..high);
-    --        Sort(helper);
-    --    end if;
-    --    Sort.Ready(low);
-    --end sort_half;
+    procedure Sort (A: in out array_range) is
 
-    --sort_left : sort_half(low, mid);
-    --sort_right : sort_half(mid+1, high);
+        procedure Mergesort(Low:Integer; High:Integer) is
+            mid : Integer := (Low + High) / 2;
+            mid1 : Integer := (if mid < High then mid + 1 else High);
+            task sort_left; -- Low .. mid
+            task sort_right; -- mid1 .. High
+            task merge is
+                entry Left_Ready;
+                entry Right_Ready;
+            end merge;
 
-    --task sort_left(integer: in low, integer: in mid);
+            task body sort_left is -- Low .. mid
+            begin
+                if Low < mid then
+                    Mergesort(Low, mid);
+                end if;
+                merge.Left_Ready;
+            end sort_left;
+            
+            task body sort_right is -- mid1 .. High
+            begin
+                if mid1 < High then
+                    Mergesort(mid1, High);
+                end if;
+                merge.Right_Ready;
+            end sort_right;
 
-    task sort_left is
-    begin
-        if length(A) > 1 then
-            helper := A(low..mid);
-            Sort(helper);
-        end if;
-    end sort_left;
+            task body merge is
+                left: Boolean := FALSE;
+                right: Boolean := FALSE;
+                i: Integer := Low;
+                j: Integer := mid1;
+                temp: my_int := A(i);
 
-    --task sort_right(integer: in mid, integer: in high);
+            begin -- task merge
+                loop
+                    select
+                        accept Left_Ready do
+                            left := TRUE;
+                        end Left_Ready;
+                    or
+                        accept Right_Ready do
+                            right := TRUE;
+                        end Right_Ready;
+                    end select;
+                exit when left and right;
+                end loop;
 
-    task sort_right is
-    begin
-        if length(A) > 1 then
-            helper := A(mid+1 .. high);
-            Sort(helper);
-        end if;
-    end sort_right;
+                for i in Low..High loop
+                    if A(i) > A(j) then
+                        A(Low .. High) := A(Low .. (i-1)) & A(j) & A(i .. (j-1)) & A((j+1) .. High);
+                        if j < High then
+                            j := j + 1;
+                        end if;
+                    end if;
+                end loop;
+            end merge;
 
-begin -- Sort
-    -- merge array here with merge sort
-    --accept Ready(low) do
-    --    if low = 1 then
-    --        left := true;
-    --    elsif low = mid+1 then
-    --        right := true;
-    --    end if;
-    --end Ready;
+        begin --Mergesort
+            null;
+        end Mergesort;
 
-    loop
-       select
-        accept Left do
-            left := true;
-        end Left;
-       or
-        accept Right do
-            right := true;
-        end Right;
-    end loop;
-    
-
-    if left and right then
-        for k in array_index loop
-            if left(i) <= right(j) then
-                A(k) := left(i);
-                i := i + 1;
-            else
-                A(k) := right(j);
-                j := j + 1;
-            --k := k + 1;
-            end if;
-        end loop;
-    end if;
-end Sort;
+    begin -- Sort
+        Mergesort(1, LENGTH);
+    end Sort;
+end Msort;

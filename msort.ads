@@ -1,6 +1,6 @@
-package Msort
-    integer : LENGTH := 40;
-    type array_range is array of Integer range -300..300;
-    A: array_range (1..LENGTH);
-    procedure Sort (array_range: in out A);
+package Msort is
+    LENGTH : integer := 40;
+    type my_int is range -300 .. 300;
+    type array_range is array (1 .. LENGTH) of my_int;
+    procedure Sort (A: in out array_range);
 end Msort;
